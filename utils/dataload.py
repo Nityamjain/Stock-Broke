@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import yfinance as yf
 import utils.functions as fn
-with open("data\stocks_data.json", "r", encoding="utf-8") as f:
+with open(r"data\stocks_data.json", "r", encoding="utf-8") as f:
     stocks_data_json = json.load(f)
     
 @st.cache_data
@@ -105,3 +105,4 @@ def get_symbol_to_display(stock_list, market):
         for symbol in stock_list
         if entry["Symbol"] == symbol
     }
+
