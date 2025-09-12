@@ -11,8 +11,10 @@ import utils.vizuals as vz
 import time
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
-# Initialize Firebase with service account
-cred = credentials.Certificate("stock-broke-f5d95-ec1744339a65.json")
+import json 
+
+service_account_str = st.secrets["FIREBASE"]["json"]
+service_account_info = json.loads(service_account_str)
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
@@ -335,3 +337,4 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
