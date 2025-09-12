@@ -37,7 +37,7 @@ if 'singout' not in st.session_state:
 LOCAL_STORE = os.path.join(os.path.dirname(__file__), "..", "data", "watchlists.json")
 
 st.set_page_config(page_title="Watchlist & News", page_icon="⭐", layout="wide")
-st.title("Welcome to Stock Broke!")
+st.title("Watchlist")
 
 # Authentication functions
 def login():
@@ -416,3 +416,4 @@ if show_news and symbols:
                 st.markdown(f"[Read more]({item['link']})")
 
                 st.markdown("---")
+
