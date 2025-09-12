@@ -19,11 +19,10 @@ import plotly.graph_objects as go
 from firebase_admin import credentials, auth, firestore
 import firebase_admin
 
-try:
-    from utils.notifications import add_notification, show_floating_notification
-except Exception:
-    add_notification = None
-    show_floating_notification = None
+import json 
+
+service_account_str = st.secrets["FIREBASE"]["json"]
+service_account_info = json.loads(service_account_str)
 
 # Initialize Firebase with service account
 cred = credentials.Certificate("stock-broke-f5d95-ec1744339a65.json")
@@ -587,3 +586,4 @@ with tab4:
     )
 
     
+
