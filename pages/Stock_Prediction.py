@@ -20,14 +20,12 @@ from firebase_admin import credentials, auth, firestore
 import firebase_admin
 
 import json 
-
 service_account_str = st.secrets["FIREBASE"]["json"]
 service_account_info = json.loads(service_account_str)
 
-# Initialize Firebase with service account
-cred = credentials.Certificate("stock-broke-f5d95-ec1744339a65.json")
 if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+    cred = credentials.Certificate(service_account_info)
+    initialize_app(cred)
 
 # Firestore setup
 db = firestore.client()
@@ -586,4 +584,5 @@ with tab4:
     )
 
     
+
 
