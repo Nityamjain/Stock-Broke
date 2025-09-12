@@ -210,15 +210,6 @@ if st.button("Start Training"):
     st.session_state['artifacts'] = {}
     st.session_state['future_df'] = None
 
-    if add_notification is not None:
-        try:
-            add_notification(
-                notification_type="info",
-                title="Training Started",
-                message=f"{ticker}: epochs={num_epochs}, lr={learning_rate}, batch={batch_size}"
-            )
-        except Exception:
-            pass
 
     # Preserve original prices for reconstruction
     orig_df = df.copy()
@@ -417,11 +408,6 @@ if st.button("Start Training"):
     }
     st.session_state['trained'] = True
 
-    if show_floating_notification is not None:
-        try:
-            show_floating_notification()
-        except Exception:
-            pass
 
 # Tabs for navigation while/after training
 tab1, tab2, tab3, tab4 = st.tabs(["Results", "Forecast", "Downloads", "Guidance"])
@@ -584,5 +570,6 @@ with tab4:
     )
 
     
+
 
 
