@@ -5,7 +5,7 @@ import yfinance as yf
 import utils.functions as fn
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(BASE_DIR,".." ."data", "stocks_data.json")
+file_path = os.path.join(BASE_DIR,".." ,"data", "stocks_data.json")
 file_path = os.path.normpath(file_path)
 
 try:
@@ -113,6 +113,7 @@ def get_symbol_to_display(stock_list, market):
         for symbol in stock_list
         if entry["Symbol"] == symbol
     }
+
 
 
 
