@@ -12,8 +12,10 @@ import yfinance as yf
 from utils.dataload import market_tickers
 import utils.dataload as dl
 
-# Initialize Firebase with service account
-cred = credentials.Certificate("stock-broke-f5d95-ec1744339a65.json")
+import json 
+
+service_account_str = st.secrets["FIREBASE"]["json"]
+service_account_info = json.loads(service_account_str)
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
@@ -412,4 +414,5 @@ if show_news and symbols:
                 st.markdown(f"**{item['title']}** ({item['publisher']})")
                 st.markdown(item['summary'])
                 st.markdown(f"[Read more]({item['link']})")
+
                 st.markdown("---")
