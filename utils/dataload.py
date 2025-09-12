@@ -4,13 +4,16 @@ import json
 import yfinance as yf
 import utils.functions as fn
 import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(BASE_DIR,".." ."data", "stocks_data.json")
+file_path = os.path.normpath(file_path)
 
-BASE_DIR = os.path.dirname(__file__)  # folder where dataload.py is
-file_path = os.path.join(BASE_DIR, "data", "stocks_data.json")
+try:
+    with open(file_path, "r", encoding="utf-8") as f:
+        stocks_data_json = json.load(f)
+except FileNotFoundError:
+    raise FileNotFoundError(f"stocks_data.json not found at {file_path}. Make sure the file exists.")
 
-with open(file_path, "r", encoding="utf-8") as f:
-    stocks_data_json = json.load(f)
-    
 @st.cache_data
 def get_display_to_symbol(region, market):
     try:
@@ -110,5 +113,6 @@ def get_symbol_to_display(stock_list, market):
         for symbol in stock_list
         if entry["Symbol"] == symbol
     }
+
 
 
