@@ -3,7 +3,12 @@ import pandas as pd
 import json
 import yfinance as yf
 import utils.functions as fn
-with open(r"data\stocks_data.json", "r", encoding="utf-8") as f:
+import os
+
+BASE_DIR = os.path.dirname(__file__)  # folder where dataload.py is
+file_path = os.path.join(BASE_DIR, "data", "stocks_data.json")
+
+with open(file_path, "r", encoding="utf-8") as f:
     stocks_data_json = json.load(f)
     
 @st.cache_data
@@ -105,4 +110,5 @@ def get_symbol_to_display(stock_list, market):
         for symbol in stock_list
         if entry["Symbol"] == symbol
     }
+
 
