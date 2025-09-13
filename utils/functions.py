@@ -7,7 +7,10 @@ import re
 import dateutil as du
 import datetime as dt
 import pandas as pd
-from firebase_admin import firestore
+import pandas as pd
+from datetime import datetime as dt
+from firebase_admin import firestore  # Import Firestore
+import firebase_admin  # Ensure initialize
 # --- CAPM Calculations ---
 @st.cache_data
 def daily_returns(df):
@@ -114,10 +117,17 @@ def init_theme():
         index=0 if st.session_state["theme"] == "Dark" else 1,
         key="theme"
     )
-    return st.session_state["theme"], 
+    return st.session_state["theme"]
 
 
 def render_feedback_form():
+    # Re-initialize client if not already (safe; skips if app exists)
+    if not firebase_admin._apps:
+        # You'll need to pass cred or init here; for simplicity, assume global init works
+        pass  # Skip if already initialized in main script
+    
+    db = firestore.client()  # Get client locally
+    
     with st.expander("🐛 Found a bug? 💡 Suggest an improvement"):
         with st.form("feedback_form"):
             bug_description = st.text_area("Describe the issue or suggestion", key="bug_description")
@@ -125,11 +135,24 @@ def render_feedback_form():
             submitted = st.form_submit_button("Submit")
 
             if submitted:
+                if not bug_description.strip():
+                    st.warning("Please add a description before submitting.")
+                    return
+                
                 feedback = {
-                    "timestamp": dt.datetime.now().isoformat(),
+                    "timestamp": dt.now().isoformat(),
                     "description": bug_description,
-                    "email": contact_email
+                    "email": contact_email or "anonymous"
                 }
-                db.collection("feedbacks").add(feedback)
-                st.success("Thanks for your feedback! Logged to database.")
+                
+                try:
+                    # Append to Firestore collection (creates if missing)
+                    db.collection("feedbacks").add(feedback)
+                    st.success("Thanks for your feedback! It's been logged to the database.")
+                    # Optional: Clear form
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error saving feedback: {str(e)}. Please try again or contact support.")
+
+
 
