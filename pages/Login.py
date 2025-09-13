@@ -119,16 +119,13 @@ if not st.session_state.logged_in:
 
     if choice == "Login":
         st.subheader("Login")
-        st.text_input("Email", key="input_email")
-        st.text_input("Password", type="password", key="input_password")
+        email=st.text_input("Email", key="input_email")
+        password=st.text_input("Password", type="password", key="input_password")
        
         if st.button("Login"):
             try:
                 # Check if user exists in Firebase
                 user = auth.get_user_by_email(email)
-        
-            
-        
                 # Save session
                 st.session_state["authenticated"] = True
                 st.session_state["username"] = user.uid
@@ -151,6 +148,7 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
 
 
 
