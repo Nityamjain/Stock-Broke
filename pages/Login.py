@@ -5,6 +5,43 @@ from email.mime.text import MIMEText
 import firebase_admin
 from firebase_admin import credentials, auth, exceptions
 
+import streamlit as st
+from firebase_admin import auth
+
+# --- Session State Setup ---
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "username" not in st.session_state:
+    st.session_state["username"] = ""
+if "usermail" not in st.session_state:
+    st.session_state["usermail"] = ""
+
+st.title("🔑 Login")
+
+# --- Input fields ---
+email = st.text_input("Email")
+password = st.text_input("Password", type="password")
+
+# --- Login button ---
+if st.button("Login"):
+    try:
+        # Check if user exists in Firebase
+        user = auth.get_user_by_email(email)
+
+        # 🚨 NOTE: Firebase Admin SDK doesn’t check password directly
+        # You’ll need to add your own password check logic here
+
+        # Save session
+        st.session_state["authenticated"] = True
+        st.session_state["username"] = user.uid
+        st.session_state["usermail"] = email
+
+        st.success("✅ Login successful!")
+        st.switch_page("pages/Home.py")   # redirect to Home
+    except Exception as e:
+        st.error(f"❌ Login failed: {e}")
+
+
 # ==============================
 # Firebase Initialization
 # ==============================
@@ -124,4 +161,5 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
 
