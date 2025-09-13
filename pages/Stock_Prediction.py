@@ -177,7 +177,7 @@ with st.expander("Model Training Configuration", expanded=True):
         )
 
 # Defaults for non-exposed hyperparameters
-learning_rate = 0.01
+learning_rate = 0.001
 hidden_size = 16
 num_layers = 1
 early_patience = 10
@@ -570,6 +570,7 @@ with tab4:
     )
 
     
+
 
 
 
