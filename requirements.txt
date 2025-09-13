@@ -13,3 +13,4 @@ vaderSentiment>=3.3.2
 google-auth>=2.23.0
 httpx-oauth
 matplotlib
+streamlit_extras
