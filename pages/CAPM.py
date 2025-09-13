@@ -27,7 +27,7 @@ with st.sidebar:
     st.header("Navigation")
     st.success(f"Signed in as {st.session_state.usermail}")
     if st.button("Sign Out"):
-        atu.signout()
+        aut.signout()
 
 
 # --- UI ---
@@ -278,6 +278,7 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
 
 
 
