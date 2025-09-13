@@ -15,12 +15,6 @@ if not firebase_admin._apps:
     initialize_app(cred)
 
 # Google OAuth
-client_id = st.secrets["google_oauth"]["client_id"]
-client_secret = st.secrets["google_oauth"]["client_secret"]
-
-st.title("Welcome to Stock Broke!")
-
-# Initialize Google OAuth2 client
 try:
     client_id = st.secrets["google_oauth"]["client_id"]
     client_secret = st.secrets["google_oauth"]["client_secret"]
@@ -28,7 +22,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "http://localhost:8501/"
+redirect_url = "http://localhost:8501/"  # Update for production (e.g., Streamlit Cloud URL)
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -44,23 +38,35 @@ def get_logged_in_user_email():
         code = query_params.get('code')
         if code:
             token = asyncio.run(get_access_token(client, redirect_url, code))
-            st.experimental_set_query_params()  # Clear code from URL
+            st.query_params.clear()  # Clear code from URL
             if token:
                 user_id, user_email = asyncio.run(get_email(client, token['access_token']))
                 if user_email:
                     try:
                         user = auth.get_user_by_email(user_email)
+                        if not user.email_verified:
+                            st.warning("Please verify your email before logging in. Check your inbox or spam.")
+                            return None
+                        st.session_state.email = user.email
+                        st.session_state.username = user.uid
+                        st.session_state.usermail = user.email
+                        st.session_state.singout = True
+                        st.session_state.singedout = True
+                        return user.email
                     except exceptions.FirebaseError as e:
                         if 'not found' in str(e).lower():
                             user = auth.create_user(email=user_email)
+                            # Send verification email
+                            action_code_settings = {
+                                "url": redirect_url,  # Redirect back to app after verification
+                                "handleCodeInApp": True
+                            }
+                            link = auth.generate_email_verification_link(user_email, action_code_settings)
+                            auth.send_email_verification_link(user_email, action_code_settings)
+                            st.info(f"Verification email sent to {user_email}. Please verify before logging in.")
+                            return None
                         else:
                             raise
-                    st.session_state.email = user.email
-                    st.session_state.username = user.uid
-                    st.session_state.usermail = user.email
-                    st.session_state.singout = True
-                    st.session_state.singedout = True
-                    return user.email
         return None
     except Exception as e:
         st.error(f"Google auth error: {e}")
@@ -92,17 +98,34 @@ if 'email' not in st.session_state:
 
 def login_callback():
     email = st.session_state.get('input_email', '').strip()
-    if not email:
-        st.warning("Please enter an email.")
+    password = st.session_state.get('input_password', '').strip()
+    if not email or not password:
+        st.warning("Please enter both email and password.")
         return
     try:
         user = auth.get_user_by_email(email)
+        if not user.email_verified:
+            st.warning("Please verify your email before logging in. Check your inbox or spam.")
+            # Offer to resend verification email
+            if st.button("Resend Verification Email", key="resend_verification"):
+                try:
+                    action_code_settings = {
+                        "url": redirect_url,
+                        "handleCodeInApp": True
+                    }
+                    auth.generate_email_verification_link(email, action_code_settings)
+                    auth.send_email_verification_link(email, action_code_settings)
+                    st.info(f"Verification email resent to {email}.")
+                except Exception as e:
+                    st.error(f"Failed to resend verification email: {e}")
+            return
+        # Note: Firebase Admin SDK can't verify passwords directly; use client-side SDK for full auth
+        # Here, we assume email + existence + verification is enough for demo
         st.success("Login successful!")
         st.session_state.username = user.uid
         st.session_state.usermail = user.email
         st.session_state.singout = True
         st.session_state.singedout = True
-        # Clear inputs
         st.session_state.input_email = ''
         st.session_state.input_password = ''
     except exceptions.FirebaseError as e:
@@ -116,19 +139,24 @@ def login_callback():
 def signup_callback():
     email = st.session_state.get('signup_email', '').strip()
     password = st.session_state.get('signup_password', '').strip()
-    username = st.session_state.get('signup_username', '').strip()  # For display only
-    if not all([email, password]):
-        st.warning("Fill in email and password.")
+    username = st.session_state.get('signup_username', '').strip()
+    if not all([email, password, username]):
+        st.warning("Fill in email, password, and username.")
         return
     try:
-        user = auth.create_user(email=email, password=password,uid=username)  # No uid= (auto-generated)
-      
-        # Clear fields
+        user = auth.create_user(email=email, password=password)  # No uid; Firebase auto-generates
+        # Send verification email
+        action_code_settings = {
+            "url": redirect_url,
+            "handleCodeInApp": True
+        }
+        auth.generate_email_verification_link(email, action_code_settings)
+        auth.send_email_verification_link(email, action_code_settings)
         st.session_state.signup_email = ''
         st.session_state.signup_password = ''
         st.session_state.signup_username = ''
-        st.success(f"Account created! Username: {user.uid}")
-        st.info("Go to Login to sign in.")
+        st.success(f"Account created for {email}! Please check your inbox (or spam) for verification email.")
+        st.info("Verify your email, then log in.")
     except RefreshError as e:
         st.error(f"Auth failed (invalid service account): {e}. Generate a new key.")
     except Exception as e:
@@ -148,8 +176,8 @@ if not st.session_state['singedout']:
         st.subheader("Login Section")
         st.text_input("Email", key='input_email')
         st.text_input("Password", type='password', key='input_password')
-        if st.button("Login", on_click=login_callback):
-            pass
+        if st.button("Login", key="login_button"):
+            login_callback()
         st.markdown("Or use Google:")
         show_login_button()
 
@@ -157,9 +185,9 @@ if not st.session_state['singedout']:
         st.subheader("Create New Account")
         st.text_input("Email", key='signup_email')
         st.text_input("Password", type='password', key='signup_password')
-        st.text_input("Username", key='signup_username')  # Display only
-        if st.button("SignUp", on_click=signup_callback):
-            pass
+        st.text_input("Username", key='signup_username')
+        if st.button("SignUp", key="signup_button"):
+            signup_callback()
         st.markdown("Or use Google:")
         show_login_button()
 
@@ -167,5 +195,6 @@ if st.session_state.singout:
     st.subheader("Welcome Back!")
     st.text(f'Username: {st.session_state.username}')
     st.text(f'Email: {st.session_state.usermail}')
-    if st.button("SignOut", on_click=logout_callback):
-        pass
+    # Unique key for SignOut button
+    if st.button("SignOut", key=f"signout_{st.session_state.usermail}_login"):
+        logout_callback()
