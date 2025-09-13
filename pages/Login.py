@@ -132,7 +132,7 @@ if not st.session_state.logged_in:
                 st.session_state["usermail"] = email
         
                 st.success("✅ Login successful!")
-                st.switch_page("pages/Home.py")   # redirect to Home
+                st.switch_page("pages/CAPM.py")   # redirect to Home
             except Exception as e:
                 st.error(f" Login failed: {e}")
 
@@ -148,6 +148,7 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
 
 
 
