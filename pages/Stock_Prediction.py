@@ -177,11 +177,11 @@ with st.expander("Model Training Configuration", expanded=True):
         )
 
 # Defaults for non-exposed hyperparameters
-learning_rate = 0.001
+learning_rate = 0.1
 hidden_size = 16
 num_layers = 1
-early_patience = 10
-weight_decay = 0.0001
+early_patience = 7
+weight_decay = 0
 target_type = "Price"
 
 max_points = 1000  # Fixed max points for plotting
@@ -570,6 +570,7 @@ with tab4:
     )
 
     
+
 
 
 
