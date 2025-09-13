@@ -22,25 +22,6 @@ st.title("🔑 Login")
 email = st.text_input("Email")
 password = st.text_input("Password", type="password")
 
-# --- Login button ---
-if st.button("Login"):
-    try:
-        # Check if user exists in Firebase
-        user = auth.get_user_by_email(email)
-
-        # 🚨 NOTE: Firebase Admin SDK doesn’t check password directly
-        # You’ll need to add your own password check logic here
-
-        # Save session
-        st.session_state["authenticated"] = True
-        st.session_state["username"] = user.uid
-        st.session_state["usermail"] = email
-
-        st.success("✅ Login successful!")
-        st.switch_page("pages/Home.py")   # redirect to Home
-    except Exception as e:
-        st.error(f"❌ Login failed: {e}")
-
 
 # ==============================
 # Firebase Initialization
@@ -147,8 +128,25 @@ if not st.session_state.logged_in:
         st.subheader("Login")
         st.text_input("Email", key="input_email")
         st.text_input("Password", type="password", key="input_password")
-        if st.button("Login", on_click=login_callback):
-            pass
+       
+        if st.button("Login"):
+    try:
+        # Check if user exists in Firebase
+        user = auth.get_user_by_email(email)
+
+        # 🚨 NOTE: Firebase Admin SDK doesn’t check password directly
+        # You’ll need to add your own password check logic here
+
+        # Save session
+        st.session_state["authenticated"] = True
+        st.session_state["username"] = user.uid
+        st.session_state["usermail"] = email
+
+        st.success("✅ Login successful!")
+        st.switch_page("pages/Home.py")   # redirect to Home
+    except Exception as e:
+        st.error(f"❌ Login failed: {e}")
+
 
     else:
         st.subheader("Sign Up")
@@ -161,5 +159,6 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
 
 
