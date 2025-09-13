@@ -265,8 +265,6 @@ with c1:
     sort_by = st.selectbox("Sort by", ["Symbol", "Change %", "Market Cap"], index=1)
 with c2:
     filter_text = st.text_input("Filter", placeholder="type to filter symbols")
-with c3:
-    show_news = st.checkbox("Show News", value=True)
 
 symbols = list(watch.get("symbols", []))
 if filter_text:
@@ -404,16 +402,6 @@ if combined_rows:
         mime="text/csv",
     )
 
-# News section (if enabled)
-if show_news and symbols:
-    for s in symbols:
-        news = _fetch_news(s)
-        if news:
-            st.subheader(f"News for {s}")
-            for item in news:
-                st.markdown(f"**{item['title']}** ({item['publisher']})")
-                st.markdown(item['summary'])
-                st.markdown(f"[Read more]({item['link']})")
 
-                st.markdown("---")
+
 
