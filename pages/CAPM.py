@@ -12,12 +12,11 @@ import time
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import json 
-from utils.auth import signout
 
 # --- Protect Page ---
-if not st.session_state.get("singedout", False):
-    st.switch_page("pages/Login.py")
-
+if not st.session_state.get("authenticated", False):
+    st.switch_page("Login.py")
+    
 # Streamlit page setup
 st.set_page_config(page_title='CAPM Analysis',
                   page_icon="💰", layout="wide")
@@ -278,6 +277,7 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
 
 
 
