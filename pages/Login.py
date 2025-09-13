@@ -7,7 +7,7 @@ from firebase_admin import credentials, auth, exceptions, initialize_app
 import asyncio
 from httpx_oauth.clients.google import GoogleOAuth2
 from google.auth.exceptions import RefreshError
-from streamlit_extras.switch_page_button import switch_page
+
 
 
 # ==============================
@@ -151,7 +151,7 @@ def login_callback():
         st.session_state.input_email = ""
         st.session_state.input_password = ""
 
-        switch_page("Stock_Analysis")
+        st.switch_page("Stock_Analysis")
 
     except exceptions.FirebaseError as e:
         if "not found" in str(e).lower():
@@ -221,4 +221,5 @@ if st.session_state.singout:
     st.text(f"Email: {st.session_state.usermail}")
     if st.button("SignOut", on_click=logout_callback):
         pass
+
 
