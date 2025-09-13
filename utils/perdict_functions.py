@@ -45,7 +45,7 @@ class TimeSeriesDataset(Dataset):
         return self.X[i], self.y[i]
     
 class LSTM(nn.Module):
-    """LSTM model for time series prediction."""
+    """LSTM model for time series prediction (matching notebook style)."""
     def __init__(self, input_size, hidden_size, num_stacked_layers):
         super().__init__()
         self.hidden_size = hidden_size
@@ -143,7 +143,7 @@ def reconstruct_prices(base_price, returns_arr):
 
 def forecast_future(_model, last_sequence, steps_ahead, lookback, _scaler, device, target_type, last_price_base):
     """
-    Generates future predictions by iteratively feeding predictions back into the model.
+    Generates future predictions by iteratively feeding predictions back into the model (matching notebook).
     """
     _model.eval()
     preds_scaled = []
@@ -161,10 +161,8 @@ def forecast_future(_model, last_sequence, steps_ahead, lookback, _scaler, devic
     dummies[:, 0] = preds_scaled
     inv = _scaler.inverse_transform(dummies)[:, 0]
     
-    if target_type == "Log Return":
+    if target_type == "returns":
         inv = np.clip(inv, -0.3, 0.3)  # Clip returns to avoid extreme values
         return last_price_base * np.exp(np.cumsum(inv))
     else:
         return inv
-
-    
