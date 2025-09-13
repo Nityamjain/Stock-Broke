@@ -24,7 +24,7 @@ EMAIL_PASSWORD = st.secrets["EMAIL"]["password"]
 def send_verification_email(user_email):
     # Generate Firebase email verification link
     action_code_settings = auth.ActionCodeSettings(
-        url="http://localhost:8501/",  # change to your deployed app URL
+        url="https://stock-broke.streamlit.app/Login",  # change to your deployed app URL
         handle_code_in_app=True
     )
     link = auth.generate_email_verification_link(user_email, action_code_settings)
@@ -124,3 +124,4 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
