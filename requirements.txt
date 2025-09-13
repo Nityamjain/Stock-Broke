@@ -12,3 +12,4 @@ firebase-admin>=6.5.0
 vaderSentiment>=3.3.2
 google-auth>=2.23.0
 httpx-oauth
+matplotlib
