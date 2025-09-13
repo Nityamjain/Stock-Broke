@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import json
 from google.auth.exceptions import RefreshError
@@ -210,4 +209,4 @@ if st.session_state.singout:
     st.text(f'Email: {st.session_state.usermail}')
     if st.button("SignOut", key=f"signout_{st.session_state.usermail}_login"):
         logout_callback()
-```
+
