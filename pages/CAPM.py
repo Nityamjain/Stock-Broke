@@ -12,6 +12,7 @@ import time
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import json 
+import utils.auth as aut
 
 # --- Protect Page ---
 if not st.session_state.get("authenticated", False):
@@ -26,7 +27,7 @@ with st.sidebar:
     st.header("Navigation")
     st.success(f"Signed in as {st.session_state.usermail}")
     if st.button("Sign Out"):
-        signout()
+        atu.signout()
 
 
 # --- UI ---
@@ -277,6 +278,7 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
 
 
 
