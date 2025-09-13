@@ -16,13 +16,6 @@ if "username" not in st.session_state:
 if "usermail" not in st.session_state:
     st.session_state["usermail"] = ""
 
-st.title("🔑 Login")
-
-# --- Input fields ---
-email = st.text_input("Email")
-password = st.text_input("Password", type="password")
-
-
 # ==============================
 # Firebase Initialization
 # ==============================
@@ -158,6 +151,7 @@ else:
     st.write(f"Email: {st.session_state.usermail}")
     if st.button("Logout"):
         st.session_state.logged_in = False
+
 
 
 
