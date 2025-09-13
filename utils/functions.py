@@ -7,6 +7,7 @@ import re
 import dateutil as du
 import datetime as dt
 import pandas as pd
+from firebase_admin import firestore
 # --- CAPM Calculations ---
 @st.cache_data
 def daily_returns(df):
@@ -129,6 +130,6 @@ def render_feedback_form():
                     "description": bug_description,
                     "email": contact_email
                 }
-                df = pd.DataFrame([feedback])
-                df.to_csv("feedback_log.csv", mode="a", header=False, index=False)
-                st.success("Thanks for your feedback! It's been logged.")
+                db.collection("feedbacks").add(feedback)
+                st.success("Thanks for your feedback! Logged to database.")
+
