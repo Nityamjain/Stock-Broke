@@ -13,9 +13,6 @@ import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import json 
 
-if not st.session_state.get("authenticated", False):
-    st.switch_page("Login.py")   
-
 service_account_str = st.secrets["FIREBASE"]["json"]
 service_account_info = json.loads(service_account_str)
 if not firebase_admin._apps:
@@ -82,12 +79,11 @@ if not st.session_state['singedout']:
     st.switch_page("pages/Login.py")
 else:
     with st.sidebar:
-    st.subheader("Account")
-    if st.button("Sign Out"):
-        st.session_state["authenticated"] = False
-        st.session_state["username"] = ""
-        st.session_state["usermail"] = ""
-        st.switch_page("Login.py")
+        st.header("Navigation")
+        st.success(f"Signed in as {st.session_state.usermail}")
+        st.text(f'Name: {st.session_state.username}')
+        if st.button("Sign Out"):
+            signout()
             
 st.title("Capital Asset Pricing Model", anchor="content")
 
