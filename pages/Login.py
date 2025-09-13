@@ -159,7 +159,7 @@ def signup_callback():
         # Generate custom token for client-side auth
         custom_token = auth.create_custom_token(user.uid)
         
-        # Clear fields safely within form (no direct session state mod)
+        # Clear fields safely within form
         st.session_state.signup_email = ''
         st.session_state.signup_password = ''
         st.session_state.signup_username = ''
@@ -195,11 +195,13 @@ if not st.session_state['singedout']:
 
     else:
         st.subheader("Create New Account")
-        with st.form("signup_form"):  # Form to avoid state modification error
+        with st.form("signup_form"):
             st.text_input("Email", key='signup_email')
             st.text_input("Password", type='password', key='signup_password')
             st.text_input("Username (display only)", key='signup_username')
-            submit = st.form_submit_button("SignUp", on_click=signup_callback)
+            submit = st.form_submit_button("SignUp", key="signup_button")
+            if submit:
+                signup_callback()
         st.markdown("Or use Google:")
         show_login_button()
 
@@ -209,4 +211,3 @@ if st.session_state.singout:
     st.text(f'Email: {st.session_state.usermail}')
     if st.button("SignOut", key=f"signout_{st.session_state.usermail}_login"):
         logout_callback()
-
