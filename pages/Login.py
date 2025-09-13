@@ -151,7 +151,7 @@ def login_callback():
         st.session_state.input_email = ""
         st.session_state.input_password = ""
 
-        st.switch_page("pages/Stock_Analysis")
+        st.switch_page('Stock_Analysis')
 
     except exceptions.FirebaseError as e:
         if "not found" in str(e).lower():
@@ -221,6 +221,7 @@ if st.session_state.singout:
     st.text(f"Email: {st.session_state.usermail}")
     if st.button("SignOut", on_click=logout_callback):
         pass
+
 
 
 
