@@ -156,13 +156,12 @@ def signup_callback():
         # Create user server-side
         user = auth.create_user(email=email, password=password)
         
-        # Generate custom token for client-side auth
-        custom_token = auth.create_custom_token(user.uid)
+        # Generate custom token (must be string for JSON/JS usage)
+        custom_token = auth.create_custom_token(user.uid).decode("utf-8")
         
         st.success(f"Account created for {email}! UID: {user.uid}")
         send_verification_js_component(email, custom_token)
         
-        # Rerun to clear form fields safely (avoids modification error)
         st.rerun()
         
     except RefreshError as e:
@@ -210,3 +209,4 @@ if st.session_state.singout:
     st.text(f'Email: {st.session_state.usermail}')
     if st.button("SignOut", key=f"signout_{st.session_state.usermail}_login"):
         logout_callback()
+
