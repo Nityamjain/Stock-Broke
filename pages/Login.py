@@ -102,13 +102,13 @@ def login_callback():
         if not user.email_verified:
             st.warning("Email not verified. Complete verification in signup.")
             return
-        # Note: Admin SDK can't verify passwords; assume verified email + existence for demo
         st.success("Login successful!")
         st.session_state.username = user.uid
         st.session_state.usermail = user.email
         st.session_state.singout = True
         st.session_state.singedout = True
         st.session_state.input_email = ''
+        st.rerun()  # Rerun to clear login fields safely
     except exceptions.FirebaseError as e:
         if 'not found' in str(e).lower():
             st.warning("User not found. Please sign up first.")
@@ -117,7 +117,7 @@ def login_callback():
     except Exception as e:
         st.error(f"Unexpected login error: {e}")
 
-def send_verification_js_component(email, uid):
+def send_verification_js_component(email, custom_token):
     """Client-side JS to send verification email using Firebase JS SDK."""
     firebase_config = st.secrets["FIREBASE_WEB"]
     config_json = json.dumps(firebase_config)
@@ -131,7 +131,7 @@ def send_verification_js_component(email, uid):
         firebase.initializeApp(config);
         const auth = firebase.auth();
         
-        auth.signInWithCustomToken('{uid}').then((userCredential) => {{
+        auth.signInWithCustomToken('{custom_token}').then((userCredential) => {{
             const user = userCredential.user;
             user.sendEmailVerification().then(() => {{
                 document.getElementById('firebase-container').innerHTML = '<p style="color: green;">Verification email sent to {email}! Check your inbox/spam.</p>';
@@ -159,13 +159,11 @@ def signup_callback():
         # Generate custom token for client-side auth
         custom_token = auth.create_custom_token(user.uid)
         
-        # Clear fields safely within form
-        st.session_state.signup_email = ''
-        st.session_state.signup_password = ''
-        st.session_state.signup_username = ''
-        
         st.success(f"Account created for {email}! UID: {user.uid}")
         send_verification_js_component(email, custom_token)
+        
+        # Rerun to clear form fields safely (avoids modification error)
+        st.rerun()
         
     except RefreshError as e:
         st.error(f"Auth failed (invalid service account): {e}")
@@ -178,6 +176,7 @@ def logout_callback():
     st.session_state.username = ''
     st.session_state.usermail = ''
     st.session_state.email = ''
+    st.rerun()
 
 st.title("Welcome to Stock Broke!")
 
@@ -199,8 +198,8 @@ if not st.session_state['singedout']:
             st.text_input("Email", key='signup_email')
             st.text_input("Password", type='password', key='signup_password')
             st.text_input("Username (display only)", key='signup_username')
-            submit = st.form_submit_button("SignUp", key="signup_button")
-            if submit:
+            submitted = st.form_submit_button("SignUp", key="signup_submit")
+            if submitted:
                 signup_callback()
         st.markdown("Or use Google:")
         show_login_button()
