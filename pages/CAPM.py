@@ -12,81 +12,22 @@ import time
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import json 
+from utils.auth import signout
 
-service_account_str = st.secrets["FIREBASE"]["json"]
-service_account_info = json.loads(service_account_str)
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
-# Firestore setup
-db = firestore.client()
-_FIREBASE_READY = True
-
-# Session state initialization
-if 'username' not in st.session_state:
-    st.session_state['username'] = ''
-if 'usermail' not in st.session_state:
-    st.session_state['usermail'] = ''
-if 'singedout' not in st.session_state:
-    st.session_state['singedout'] = False
-if 'singout' not in st.session_state:
-    st.session_state['singout'] = False
-
-
+# --- Protect Page ---
+if not st.session_state.get("singedout", False):
+    st.switch_page("pages/Login.py")
 
 # Streamlit page setup
 st.set_page_config(page_title='CAPM Analysis',
                   page_icon="💰", layout="wide")
 
 
-# Authentication functions
-def login():
-    try:
-        user = auth.get_user_by_email(st.session_state.email)
-        # Note: Firebase Admin SDK cannot verify passwords directly.
-        # For password verification, you would typically use Firebase Authentication client-side SDK.
-        # Here, we assume login success if user exists (simplified for Admin SDK).
-        st.session_state.username = user.uid
-        st.session_state.usermail = user.email
-        st.session_state.singout = True
-        st.session_state.singedout = True
-        st.success("Logged in successfully")
-    except:
-        st.warning("User not found or incorrect credentials. Please sign up or check your email.")
-
-def signup():
-    try:
-        user = auth.create_user(email=st.session_state.email, password=st.session_state.password, uid=st.session_state.signup_username)
-        st.session_state.username = user.uid
-        st.session_state.usermail = user.email
-        st.session_state.singout = True
-        st.session_state.singedout = True
-        st.success("Account created and logged in successfully")
-    except Exception as e:
-        st.error(f"Error creating account: {str(e)}")
-
-def signout():
-    st.session_state.singout = False
-    st.session_state.singedout = False
-    st.session_state.username = ''
-    st.session_state.usermail = ''
-    st.session_state.pop('watchlist', None)
-    st.query_params.clear()
-    st.rerun()
-
-# Authentication UI
-if not st.session_state['singedout']:
-    st.switch_page("pages/Login.py")
-else:
-    with st.sidebar:
-        st.header("Navigation")
-        st.success(f"Signed in as {st.session_state.usermail}")
-        st.text(f'Name: {st.session_state.username}')
-        if st.button("Sign Out"):
-            signout()
-            
-st.title("Capital Asset Pricing Model", anchor="content")
-
+with st.sidebar:
+    st.header("Navigation")
+    st.success(f"Signed in as {st.session_state.usermail}")
+    if st.button("Sign Out"):
+        signout()
 
 
 # --- UI ---
@@ -337,5 +278,6 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
 
 
