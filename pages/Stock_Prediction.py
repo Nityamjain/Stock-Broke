@@ -467,17 +467,16 @@ with tab2:
         scaler = artifacts['scaler']
         shifted_df_as_np = artifacts['shifted_np']
         device = artifacts['device']
-        # User controls for forecast horizon after training
         forecast_days = st.slider("Forecast Horizon (days)", min_value=1, max_value=120, value=30, step=1,
                                   help="Number of future business days to predict.")
 
-        # Resolve last price base robustly
         try:
             _orig_df_for_forecast = st.session_state.get('orig_df', df)
             last_price_base = float(pd.to_numeric(_orig_df_for_forecast['Close'], errors='coerce').dropna().values[-1])
         except Exception:
             last_price_base = float(pd.to_numeric(df['Close'], errors='coerce').dropna().values[-1])
-        def forecast_future(model, last_sequence, steps_ahead, lookback, scaler, device, last_price_base=None):
+
+        def forecast_future(model, last_sequence, steps_ahead, lookback, scaler, device, last_price_base=None, target_type="price"):
             model.eval()
             preds_scaled = []
             current_seq = last_sequence.copy()
@@ -488,29 +487,34 @@ with tab2:
                 preds_scaled.append(pred_scaled)
                 current_seq = np.roll(current_seq, -1)
                 current_seq[-1] = pred_scaled
+            preds_scaled = preds_scaled[::-1]  # Reverse to ensure chronological order
             dummies = np.zeros((len(preds_scaled), lookback+1))
             dummies[:,0] = preds_scaled
             inv = scaler.inverse_transform(dummies)[:,0]
-            if target_type == "Log Return":
-                # Clip forecast returns to avoid overflow and implausible moves
+            if target_type == "returns":
                 inv = np.clip(inv, -0.3, 0.3)
                 base_price = float(last_price_base) if last_price_base is not None else float(pd.to_numeric(df['Close'], errors='coerce').dropna().values[-1])
-                return base_price * np.exp(np.cumsum(inv))
+                return base_price * np.exp(np.cumsum(inv[::-1]))[::-1]  # Reverse cumsum input and output
             else:
-                return inv
+                return inv[::-1]  # Reverse to ensure chronological order
 
         last_sequence = shifted_df_as_np[-1, 1:]
-        future_preds = forecast_future(model, last_sequence, steps_ahead=forecast_days, lookback=lookback, scaler=scaler, device=device, last_price_base=last_price_base)
+        future_preds = forecast_future(model, last_sequence, steps_ahead=forecast_days, lookback=lookback, scaler=scaler, device=device, last_price_base=last_price_base, target_type=target_type)
         last_date = pd.to_datetime(df['Date'].iloc[-1])
         future_dates = pd.bdate_range(last_date + pd.Timedelta(days=1), periods=forecast_days)
         future_df = pd.DataFrame({'Date': future_dates, 'Predicted Close': future_preds})
 
-        # Next day metric
-        next_day = future_df.iloc[0]
+        next_day = future_df.iloc[0]  # First row is now the next day
         st.metric(label=f"Next Day ({next_day['Date'].strftime('%Y-%m-%d')})", value=f"{next_day['Predicted Close']:.2f}")
 
-        # New future chart (combined line with markers)
+        test_errors = np.abs(new_y_test - test_predictions)
+        error_std = np.std(test_errors) if len(test_errors) > 0 else 10
+        lower = future_preds - error_std
+        upper = future_preds + error_std
+
         fig_future = go.Figure()
+        fig_future.add_trace(go.Scatter(x=future_df['Date'], y=upper, fill=None, mode='lines', line_color='rgba(0,100,80,0.2)', name='Upper Bound'))
+        fig_future.add_trace(go.Scatter(x=future_df['Date'], y=lower, fill='tonexty', mode='lines', line_color='rgba(0,100,80,0.2)', name='Lower Bound'))
         fig_future.add_trace(go.Scatter(x=future_df['Date'], y=future_df['Predicted Close'], mode='lines+markers', name='Forecast', line=dict(color='#9467bd')))
         fig_future.update_layout(title=f"Next {forecast_days} Business Days Forecast", margin=dict(l=10, r=10, t=40, b=10))
         st.plotly_chart(fig_future, use_container_width=True)
@@ -522,7 +526,7 @@ with tab2:
         st.session_state['forecast_horizon'] = int(forecast_days)
     else:
         st.info("Train a model to generate forecasts.")
-
+        
 with tab3:
     st.subheader("Downloads")
     if st.session_state.get('future_df') is not None:
@@ -570,6 +574,7 @@ with tab4:
     )
 
     
+
 
 
 
