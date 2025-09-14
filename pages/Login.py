@@ -54,6 +54,34 @@ def send_verification_email(user_email):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
+        
+        
+def send_password_reset_email(user_email):
+    action_code_settings = auth.ActionCodeSettings(
+        url="https://stock-broke.streamlit.app/Login",  # Change to your deployed URL
+        handle_code_in_app=True
+    )
+    link = auth.generate_password_reset_link(user_email, action_code_settings)
+
+    subject = "Reset your Stock Broke Password"
+    body = f"""
+    Hi,
+
+    You requested a password reset for your Stock Broke account.
+    Click the link below to reset your password:
+
+    {link}
+
+    If you did not request this, please ignore this email.
+    """
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = user_email
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
 
 # ==============================
 # Google OAuth Setup
@@ -65,7 +93,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "http://localhost:8501/"
+redirect_url = "https://stock-broke.streamlit.app/Login"
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -194,39 +222,103 @@ def logout_callback():
 # ==============================
 # UI
 # ==============================
+# ==============================
+# UI (with corrected state management)
+# ==============================
+
+# Initialize the view state if it doesn't exist
+if 'auth_view' not in st.session_state:
+    st.session_state.auth_view = "Login"
+
+# Define a callback function to change the view
+def set_auth_view(view):
+    st.session_state.auth_view = view
+
 st.title("Welcome to Stock Broke!")
 
 if not st.session_state.singedout:
-    choice = st.selectbox("Login/SignUp", ["Login", "SignUp"])
+    # Use the session state to control the selectbox's default value
+    # The key parameter directly links the selectbox to our session state
+    st.selectbox(
+        "Login/SignUp",
+        ["Login", "SignUp", "Reset Password"],
+        key='auth_view'
+    )
 
-    if choice == "Login":
+    # --- Your logic should now depend on st.session_state.auth_view ---
+
+    if st.session_state.auth_view == "Login":
         st.subheader("Login Section")
         st.text_input("Email", key="input_email")
         st.text_input("Password", type="password", key="input_password")
-        if st.button("Login", on_click=login_callback):
-            st.switch_page("pages/Stock_Analysis.py")
-            
-        st.markdown("Or use Google:")
+        
+        # Use columns for better layout
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Login", on_click=login_callback):
+                # Page switching should be handled after a successful login,
+                # not directly in the on_click of the main UI.
+                # The login_callback now handles setting the session state.
+                # A successful login will cause a rerun where st.session_state.singout is True.
+                pass
+        with col2:
+            # Use the on_click callback to change the view
+            st.button("Forgot Password?", on_click=set_auth_view, args=("Reset Password",))
+
+        st.divider()
+        st.markdown("<p style='text-align: center;'>Or</p>", unsafe_allow_html=True)
         show_login_button()
 
-    else:
+    elif st.session_state.auth_view == "SignUp":
         st.subheader("Create New Account")
+        st.text_input("Username", key="signup_username")
         st.text_input("Email", key="signup_email")
         st.text_input("Password", type="password", key="signup_password")
-        st.text_input("Username", key="signup_username")
+
         if st.button("SignUp", on_click=signup_callback):
             pass
-        st.markdown("Or use Google:")
-        show_login_button()
 
+        st.divider()
+        st.markdown("<p style='text-align: center;'>Or</p>", unsafe_allow_html=True)
+        show_login_button()
+        
+    elif st.session_state.auth_view == "Reset Password":
+        st.subheader("Reset Password")
+        st.text_input("Enter your registered email", key="reset_email")
+
+        if st.button("Send Reset Email"):
+            email = st.session_state.get("reset_email", "").strip()
+            if email:
+                try:
+                    # It's good practice to check if the user exists first
+                    auth.get_user_by_email(email)
+                    send_password_reset_email(email) # Assuming you have this function
+                    st.success("Password reset email sent! Check your inbox.")
+                    st.session_state.reset_email = ""
+                except exceptions.FirebaseError as e:
+                    if "user-not-found" in str(e).lower():
+                        st.error("No account found with that email address.")
+                    else:
+                        st.error(f"An error occurred: {e}")
+                except Exception as e:
+                    st.error(f"Failed to send reset email: {e}")
+            else: 
+                st.warning("Please enter your email.")
+        
+        # Add a button to navigate back to the login screen
+        st.button("Back to Login", on_click=set_auth_view, args=("Login",))
+
+# This part runs after a successful login
 if st.session_state.singout:
-    st.subheader("Welcome Back!")
-    st.text(f"Username: {st.session_state.username}")
+    st.subheader(f"Welcome, {st.session_state.username}!")
     st.text(f"Email: {st.session_state.usermail}")
     if st.button("SignOut", on_click=logout_callback):
-        pass
-
-
-
-
-
+        # Rerun to show the login UI again
+        st.rerun()
+        
+        # Place these after successful login or wherever you want custom nav
+    st.page_link("Home.py", label="Home", icon="🏠")
+    st.page_link("pages/Stock_Analysis.py", label="Stock Analysis", icon="📈")
+    st.page_link("pages/CAPM.py", label="CAPM", icon="💼")
+    st.page_link("pages/Stock_Prediction.py", label="Prediction", icon="🔍")
+    st.page_link("pages/Watchlist.py", label="Watchlist", icon="⚙️")
