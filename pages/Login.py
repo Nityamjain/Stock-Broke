@@ -46,7 +46,7 @@ except Exception:
     st.warning("FIREBASE.api_key not found in secrets.toml. Email/password sign-in will be disabled.")
 
 # Google OAuth client
-redirect_url = "http://localhost:8501/Login"  # Change for production
+redirect_url = "https://stock-broke.streamlit.app/Login"  # Change for production
 client = GoogleOAuth2(client_id=GOOGLE_CLIENT_ID, client_secret=GOOGLE_CLIENT_SECRET)
 
 # Apply nest_asyncio to avoid 'asyncio.run() cannot be called from a running event loop' inside Streamlit
@@ -483,6 +483,7 @@ if st.session_state.get("trigger_rerun", False):
 # -------------------------------------------------------------------
 # End of module
 # -------------------------------------------------------------------
+
 
 
 
