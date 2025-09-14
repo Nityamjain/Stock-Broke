@@ -14,3 +14,4 @@ google-auth>=2.23.0
 httpx-oauth
 matplotlib
 streamlit_extras
+nest_asyncio
