@@ -20,6 +20,7 @@ import json
 service_account_str = st.secrets["FIREBASE"]["json"]
 service_account_info = json.loads(service_account_str)
 if not firebase_admin._apps:
+    cred = credentials.Certificate(service_account_info)
     firebase_admin.initialize_app(cred)
 
 # Validate secrets
@@ -482,5 +483,6 @@ if st.session_state.get("trigger_rerun", False):
 # -------------------------------------------------------------------
 # End of module
 # -------------------------------------------------------------------
+
 
 
