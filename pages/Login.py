@@ -9,7 +9,8 @@ import nest_asyncio
 import asyncio
 from httpx_oauth.clients.google import GoogleOAuth2
 from google.auth.exceptions import RefreshError
-from utils.firebase_init import initialize_firebase
+import firebase_admin
+from firebase_admin import credentials, auth,firestore
 
 # -------------------------------------------------------------------
 # Initialization & secrets validation
@@ -481,4 +482,5 @@ if st.session_state.get("trigger_rerun", False):
 # -------------------------------------------------------------------
 # End of module
 # -------------------------------------------------------------------
+
 
