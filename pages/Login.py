@@ -8,10 +8,12 @@ import asyncio
 from httpx_oauth.clients.google import GoogleOAuth2
 from google.auth.exceptions import RefreshError
 
-
-
-
-st.sidebar(expander="About", expanded=False)
+    st.set_page_config(
+        page_title="Stock Broke",
+        page_icon="",
+        layout="wide",
+        initial_sidebar_state="collapsed"
+    )
 # ==============================
 # Firebase Initialization
 # ==============================
@@ -225,6 +227,7 @@ if st.session_state.singout:
     st.text(f"Email: {st.session_state.usermail}")
     if st.button("SignOut", on_click=logout_callback):
         pass
+
 
 
 
