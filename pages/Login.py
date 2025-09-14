@@ -104,7 +104,7 @@ def smtp_send(from_addr, to_addr, subject, body):
 def send_verification_email(user_email):
     try:
         action_code_settings = auth.ActionCodeSettings(
-            url="http://localhost:8051/Login",
+            url="https://stock-broke.streamlit.app/Login",
             handle_code_in_app=True
         )
         link = auth.generate_email_verification_link(user_email, action_code_settings)
@@ -125,7 +125,7 @@ If you did not request this, ignore this email.
 def send_password_reset_email(user_email):
     try:
         action_code_settings = auth.ActionCodeSettings(
-            url="http://localhost:8051/Login",
+            url="https://stock-broke.streamlit.app/Login",
             handle_code_in_app=True
         )
         link = auth.generate_password_reset_link(user_email, action_code_settings)
@@ -483,6 +483,7 @@ if st.session_state.get("trigger_rerun", False):
 # -------------------------------------------------------------------
 # End of module
 # -------------------------------------------------------------------
+
 
 
 
