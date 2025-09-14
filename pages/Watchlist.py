@@ -75,7 +75,7 @@ def signout():
     st.rerun()
 
 # Authentication UI
-if not st.session_state['singedout']:
+if not st.session_state['logged_in']:
     st.switch_page("pages/Login.py")
 else:
     with st.sidebar:
@@ -401,6 +401,7 @@ if combined_rows:
         file_name="watchlist.csv",
         mime="text/csv",
     )
+
 
 
 
