@@ -37,7 +37,7 @@ st.set_page_config(page_title='Stock Prediction',
                   page_icon="", layout="wide")
 
 # Authentication UI
-if not st.session_state['logged_in']:
+if not st.session_state['singedout']:
     st.switch_page("pages/Login.py")
 else:
     with st.sidebar:
@@ -546,4 +546,5 @@ with tab4:
 # Updated predict_functions.py to match (no changes needed, but ensure compatibility with "returns")
 # The provided predict_functions.py already has if target_type == "Log Return", but we changed to "returns" in app.
 # Update the function in predict_functions.py accordingly, but since user provided old, assume it's updated in app calls.
+
 
