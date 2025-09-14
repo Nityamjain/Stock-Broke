@@ -31,59 +31,13 @@ if not firebase_admin._apps:
 db = firestore.client()
 _FIREBASE_READY = True
 
-# Session state initialization
-if 'username' not in st.session_state:
-    st.session_state['username'] = ''
-if 'usermail' not in st.session_state:
-    st.session_state['usermail'] = ''
-if 'singedout' not in st.session_state:
-    st.session_state['singedout'] = False
-if 'singout' not in st.session_state:
-    st.session_state['singout'] = False
 
 
 st.set_page_config(page_title='Stock Prediction',
                   page_icon="", layout="wide")
 
-
-
-# Authentication functions
-def login():
-    try:
-        user = auth.get_user_by_email(st.session_state.email)
-        # Note: Firebase Admin SDK cannot verify passwords directly.
-        # For password verification, you would typically use Firebase Authentication client-side SDK.
-        # Here, we assume login success if user exists (simplified for Admin SDK).
-        st.session_state.username = user.uid
-        st.session_state.usermail = user.email
-        st.session_state.singout = True
-        st.session_state.singedout = True
-        st.success("Logged in successfully")
-    except:
-        st.warning("User not found or incorrect credentials. Please sign up or check your email.")
-
-def signup():
-    try:
-        user = auth.create_user(email=st.session_state.email, password=st.session_state.password, uid=st.session_state.signup_username)
-        st.session_state.username = user.uid
-        st.session_state.usermail = user.email
-        st.session_state.singout = True
-        st.session_state.singedout = True
-        st.success("Account created and logged in successfully")
-    except Exception as e:
-        st.error(f"Error creating account: {str(e)}")
-
-def signout():
-    st.session_state.singout = False
-    st.session_state.singedout = False
-    st.session_state.username = ''
-    st.session_state.usermail = ''
-    st.session_state.pop('watchlist', None)
-    st.query_params.clear()
-    st.rerun()
-
 # Authentication UI
-if not st.session_state['singedout']:
+if not st.session_state['logged_in']:
     st.switch_page("pages/Login.py")
 else:
     with st.sidebar:
@@ -592,3 +546,4 @@ with tab4:
 # Updated predict_functions.py to match (no changes needed, but ensure compatibility with "returns")
 # The provided predict_functions.py already has if target_type == "Log Return", but we changed to "returns" in app.
 # Update the function in predict_functions.py accordingly, but since user provided old, assume it's updated in app calls.
+
