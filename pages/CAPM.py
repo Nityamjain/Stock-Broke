@@ -75,7 +75,7 @@ def signout():
     st.rerun()
 
 # Authentication UI
-if not st.session_state['logged_in']:
+if not st.session_state['singedout']:
     st.switch_page("pages/Login.py")
 else:
     with st.sidebar:
@@ -337,5 +337,6 @@ st.markdown(
       - Ensure overlapping dates and a suitable benchmark when interpreting β and expected returns.
     """
 )
+
 
 
