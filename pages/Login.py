@@ -305,15 +305,22 @@ else:
         st.markdown("Or use Google:")
         show_login_button()
 
-    else:
+    elif choice == "Signup":
         st.subheader("Create New Account")
         st.text_input("Email", key="signup_email")
         st.text_input("Password", type="password", key="signup_password")
         st.text_input("Username", key="signup_username")
         if st.button("SignUp", on_click=signup_callback):
             pass
-        st.markdown("Or use Google:")
-        show_login_button()
+       
+    else:
+        st.subheader("Reset Password")
+        st.text_input("Enter your email to reset password", key="reset_email")
+        if st.button("Send Reset Link", on_click=reset_password_callback):
+            pass
+
+
+
 
 
 
