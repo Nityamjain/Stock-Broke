@@ -147,7 +147,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "https://stock-broke-f5d95.firebaseapp.com/__/auth/handler"
+redirect_url = "https://stock-broke.streamlit.app/Login"
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -299,11 +299,12 @@ else:
         st.subheader("Login Section")
         st.text_input("Email", key="input_email")
         st.text_input("Password", type="password", key="input_password")
-        if st.button("Login", on_click=login_callback):
-            st.switch_page("pages/Stock_Analysis.py")
-            
-        st.markdown("Or use Google:")
-        show_login_button()
+        c1,c2,c3=st.columns([1,0.7,1])        
+        with c1:
+         if st.button("Login", on_click=login_callback):
+             st.switch_page("pages/Stock_Analysis.py")
+        with c3:
+            show_login_button()
 
     elif choice == "Signup":
         st.subheader("Create New Account")
@@ -318,6 +319,7 @@ else:
         st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
+
 
 
 
