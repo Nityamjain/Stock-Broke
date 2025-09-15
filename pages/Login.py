@@ -28,30 +28,33 @@ EMAIL_PASSWORD = st.secrets["EMAIL"]["password"]
 
 def send_verification_email(user_email):
     action_code_settings = auth.ActionCodeSettings(
-        url="https://stock-broke.streamlit.app/Login",  # Change to your deployed URL
+        url="https://stock-broke.streamlit.app/",  # Update to deployed URL
         handle_code_in_app=True
     )
-    link = auth.generate_email_verification_link(user_email, action_code_settings)
+    try:
+        link = auth.generate_email_verification_link(user_email, action_code_settings)
+        subject = "Verify your Stock Broke Account"
+        body = f"""
+        Hi,
 
-    subject = "Verify your Stock Broke Account"
-    body = f"""
-    Hi,
+        Thanks for signing up for Stock Broke!
+        Please verify your email by clicking this link:
 
-    Thanks for signing up for Stock Broke!
-    Please verify your email by clicking this link:
+        {link}
 
-    {link}
+        If you don’t see this email in your inbox, please check your spam or junk folder.
+        If you did not request this, ignore this email.
+        """
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = user_email
 
-    If you did not request this, ignore this email.
-    """
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = EMAIL_ADDRESS
-    msg["To"] = user_email
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
+    except Exception as e:
+        st.error(f"Failed to send verification email: {e}")
 
 # ==============================
 # Google OAuth Setup
@@ -63,7 +66,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "http://localhost:8501/"
+redirect_url = "https://stock-broke.streamlit.app/"
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -87,7 +90,7 @@ def get_logged_in_user_email():
                         user = auth.get_user_by_email(user_email)
                     except exceptions.FirebaseError as e:
                         if "not found" in str(e).lower():
-                            user = auth.create_user(email=user_email)
+                            user = auth.create_user(email=user_email, email_verified=True)  # Mark Google users as verified
                         else:
                             raise
                     st.session_state.username = user.uid
@@ -99,7 +102,7 @@ def get_logged_in_user_email():
     except Exception as e:
         st.error(f"Google auth error: {e}")
         return None
-
+        
 def show_login_button():
     try:
         authorization_url = asyncio.run(
@@ -129,6 +132,7 @@ if "singout" not in st.session_state:
 # ==============================
 # Auth Functions
 # ==============================
+
 def login_callback():
     email = st.session_state.get("input_email", "").strip()
     if not email:
@@ -136,30 +140,22 @@ def login_callback():
         return
     try:
         user = auth.get_user_by_email(email)
-
-        if not user.email_verified:
+        st.write(f"Debug: Email verified status: {user.email_verified}")  # Debug
+        is_google_user = any(provider.provider_id == "google.com" for provider in user.provider_data)
+        if not user.email_verified and not is_google_user:
             st.error("Email not verified! Please check your inbox.")
             return
-
-        st.success("Login successful!")
         st.session_state.username = user.uid
         st.session_state.usermail = user.email
         st.session_state.singout = True
         st.session_state.singedout = True
-
-        # Clear inputs
-        st.session_state.input_email = ""
-        st.session_state.input_password = ""
-
+        st.success("Login successful!")
         st.switch_page('Stock_Analysis')
-
     except exceptions.FirebaseError as e:
         if "not found" in str(e).lower():
             st.warning("User not found. Please sign up first.")
         else:
             st.error(f"Login error: {e}")
-    except Exception as e:
-        st.error(f"Unexpected login error: {e}")
 
 def signup_callback():
     email = st.session_state.get("signup_email", "").strip()
@@ -221,6 +217,7 @@ if st.session_state.singout:
     st.text(f"Email: {st.session_state.usermail}")
     if st.button("SignOut", on_click=logout_callback):
         pass
+
 
 
 
