@@ -314,11 +314,12 @@ else:
         if st.button("SignUp", on_click=signup_callback):
             pass
        
-    else:
+    elif choice == "Reset Password"
         st.subheader("Reset Password")
         st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
+
 
 
 
