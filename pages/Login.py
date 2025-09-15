@@ -306,7 +306,7 @@ else:
         with c3:
             show_login_button()
 
-    elif choice == "Signup":
+    elif choice == "SignUp":
         st.subheader("Create New Account")
         st.text_input("Email", key="signup_email")
         st.text_input("Password", type="password", key="signup_password")
@@ -319,6 +319,7 @@ else:
         st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
+
 
 
 
