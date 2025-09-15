@@ -147,7 +147,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "https://stock-broke.streamlit.app/Login"
+redirect_url = "https://stock-broke-f5d95.firebaseapp.com/__/auth/handler"
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -293,7 +293,7 @@ if st.session_state.singout:
             pass
 
 else:
-    choice = st.selectbox("Login/SignUp", ["Login", "SignUp"])
+    choice = st.selectbox("Login/SignUp", ["Login", "SignUp","Reset Password"])
 
     if choice == "Login":
         st.subheader("Login Section")
@@ -318,6 +318,7 @@ else:
         st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
+
 
 
 
