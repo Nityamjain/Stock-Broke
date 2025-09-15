@@ -31,6 +31,7 @@ def send_verification_email(user_email):
     )
     try:
         link = auth.generate_email_verification_link(user_email, action_code_settings)
+        st.write(f"Debug: Verification link: {link}")  # Debug
         subject = "Verify your Stock Broke Account"
         body = f"""
         Hi,
@@ -65,7 +66,7 @@ except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "https://stock-broke.streamlit.app/Login"  # Update to your deployed URL
+redirect_url = "https://stock-broke.streamlit.app/"  # Update to your deployed URL
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -138,6 +139,8 @@ def login_callback():
         return
     try:
         user = auth.get_user_by_email(email)
+        # Force refresh user data
+        user = auth.get_user(user.uid)  # Re-fetch user by UID
         st.write(f"Debug: Email verified status: {user.email_verified}")  # Debug
         is_google_user = any(provider.provider_id == "google.com" for provider in user.provider_data)
         if not user.email_verified and not is_google_user:
