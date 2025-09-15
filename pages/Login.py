@@ -9,6 +9,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from google.auth.exceptions import RefreshError
 
 
+st.set_page_config(page_title="Stock Broke - Login", page_icon="🔐",initial_sidebar_state="collapsed",layout="centered")
 
 
 # ==============================
@@ -54,17 +55,99 @@ def send_verification_email(user_email):
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
 
+def send_password_reset_email(user_email):
+    try:
+        action_code_settings = auth.ActionCodeSettings(
+            url="https://stock-broke.streamlit.app/Login",  # After reset, redirect here
+            handle_code_in_app=True
+        )
+        reset_link = auth.generate_password_reset_link(user_email, action_code_settings)
+
+        subject = "Reset your Stock Broke Password"
+        body = f"""
+        Hi,
+
+        You requested to reset your password.
+        Click the link below to set a new password:
+
+        {reset_link}
+
+        If you did not request this, you can ignore this email.
+        """
+
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = user_email
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
+
+        st.success("Password reset link sent! Please check your inbox.")
+    except Exception as e:
+        st.error(f"Failed to send reset link: {e}")
+
+def show_login_button():
+    try:
+        # Generate authorization URL
+        authorization_url = asyncio.run(
+            client.get_authorization_url(
+                redirect_url,
+                scope=["email", "profile"],
+                extras_params={"access_type": "offline"},
+            )
+        )
+
+        # Google-style button, matches Streamlit's native button theme
+        google_button = f'''
+        <a href="{authorization_url}" target="_self" style="text-decoration:none;">
+            <div style='
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #d6d6d6;
+                border-radius: 0.5rem;
+                font-size: 0.9rem;
+                font-weight: 500;
+                padding: 0.6rem 1.2rem;
+                width: 250px;
+                margin: 10px auto;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                cursor: pointer;
+                transition: all 0.2s ease-in-out;
+            '
+            onmouseover="this.style.backgroundColor='#f1f1f1'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.15)';" 
+            onmouseout="this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+                     style="height:20px;width:20px;margin-right:10px;" />
+                <span>Login with Google</span>
+            </div>
+        </a>
+        '''
+
+        st.markdown(google_button, unsafe_allow_html=True)
+
+        # Handle login state after redirect
+        get_logged_in_user_email()
+
+    except Exception as e:
+        st.error(f"Failed to generate auth URL: {e}")
+
+
 # ==============================
 # Google OAuth Setup
 # ==============================
-try:
+try:    
     client_id = st.secrets["google_oauth"]["client_id"]
     client_secret = st.secrets["google_oauth"]["client_secret"]
 except KeyError as e:
     st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
     st.stop()
 
-redirect_url = "http://localhost:8501/"
+redirect_url = "https://stock-broke.streamlit.app/Login"
 client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
 
 async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
@@ -73,14 +156,13 @@ async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
 async def get_email(client: GoogleOAuth2, token: str):
     user_id, user_email = await client.get_id_email(token)
     return user_id, user_email
-
 def get_logged_in_user_email():
     try:
-        query_params = st.query_params
-        code = query_params.get("code")
+        code = st.query_params.get("code")
         if code:
             token = asyncio.run(get_access_token(client, redirect_url, code))
-            st.experimental_set_query_params()  # Clear code from URL
+            # Clear code from URL using new API
+            st.query_params.clear()
             if token:
                 user_id, user_email = asyncio.run(get_email(client, token["access_token"]))
                 if user_email:
@@ -99,25 +181,8 @@ def get_logged_in_user_email():
         return None
     except Exception as e:
         st.error(f"Google auth error: {e}")
-        return None
+        return None 
 
-def show_login_button():
-    try:
-        authorization_url = asyncio.run(
-            client.get_authorization_url(
-                redirect_url,
-                scope=["email", "profile"],
-                extras_params={"access_type": "offline"},
-            )
-        )
-        st.markdown(f'<a href="{authorization_url}" target="_self">Login with Google</a>', unsafe_allow_html=True)
-        get_logged_in_user_email()
-    except Exception as e:
-        st.error(f"Failed to generate auth URL: {e}")
-
-# ==============================
-# Session State Defaults
-# ==============================
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "usermail" not in st.session_state:
@@ -152,6 +217,7 @@ def login_callback():
         # Clear inputs
         st.session_state.input_email = ""
         st.session_state.input_password = ""
+    
 
         
 
@@ -183,6 +249,16 @@ def signup_callback():
         st.error(f"Auth failed (invalid service account): {e}. Generate a new key.")
     except Exception as e:
         st.error(f"Signup error: {e}")
+        
+def reset_password_callback():
+    email = st.session_state.reset_email.strip()
+    if not email:
+        st.warning("Please enter your email.")
+        return
+    send_password_reset_email(email)
+
+    st.session_state.reset_email = ""
+
 
 def logout_callback():
     st.session_state.singout = False
@@ -193,9 +269,30 @@ def logout_callback():
 # ==============================
 # UI
 # ==============================
+
+# At the very top, after session_state defaults
+google_email = get_logged_in_user_email()
+if google_email and not st.session_state.singedout:
+    # Mark user as logged in
+    try:
+        user = auth.get_user_by_email(google_email)
+        st.session_state.username = user.uid
+        st.session_state.usermail = user.email
+        st.session_state.singout = True
+        st.session_state.singedout = True
+    except exceptions.FirebaseError:
+        st.error("Failed to fetch Google user from Firebase.")
+
 st.title("Welcome to Stock Broke!")
 
-if not st.session_state.singedout:
+if st.session_state.singout:
+        st.subheader("Welcome Back!")
+        st.text(f"Username: {st.session_state.username}")
+        st.text(f"Email: {st.session_state.usermail}")
+        if st.button("SignOut", on_click=logout_callback):
+            pass
+
+else:
     choice = st.selectbox("Login/SignUp", ["Login", "SignUp"])
 
     if choice == "Login":
@@ -217,15 +314,6 @@ if not st.session_state.singedout:
             pass
         st.markdown("Or use Google:")
         show_login_button()
-
-if st.session_state.singout:
-    st.subheader("Welcome Back!")
-    st.text(f"Username: {st.session_state.username}")
-    st.text(f"Email: {st.session_state.usermail}")
-    if st.button("SignOut", on_click=logout_callback):
-        pass
-
-
 
 
 
