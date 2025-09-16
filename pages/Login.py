@@ -88,10 +88,67 @@ def send_password_reset_email(user_email):
     except Exception as e:
         st.error(f"Failed to send reset link: {e}")
 
+
+
+
+# ==============================
+# Google OAuth Setup
+# ==============================
+try:    
+    client_id = st.secrets["google_oauth"]["client_id"]
+    client_secret = st.secrets["google_oauth"]["client_secret"]
+except KeyError as e:
+    st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
+    st.stop()
+
+redirect_url = 'https://stock-broke.streamlit.app/Login'
+client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
+
+async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
+    return await client.get_access_token(code, redirect_url)
+
+async def get_email(client: GoogleOAuth2, token: str):
+    user_id, user_email = await client.get_id_email(token)
+    return user_id, user_email
+
+def run_async(coro):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(coro)
+    loop.close()
+    return result
+    
+def get_logged_in_user_email():
+    try:
+        code = st.query_params.get("code")
+        if code:
+            token = run_async(get_access_token(client, redirect_url, code))
+            # Clear code from URL using new API
+            st.query_params.clear()
+            if token:
+                user_id, user_email = run_async(get_email(client, token["access_token"]))
+                if user_email:
+                    try:
+                        user = auth.get_user_by_email(user_email)
+                    except exceptions.FirebaseError as e:
+                        if "not found" in str(e).lower():
+                            user = auth.create_user(email=user_email)
+                        else:
+                            raise
+                    st.session_state.username = user.uid
+                    st.session_state.usermail = user.email
+                    st.session_state.singout = True
+                    st.session_state.singedout = True
+                    return user.email
+        return None
+    except Exception as e:
+        st.error(f"Google auth error: {e}")
+        return None 
+
 def show_login_button():
     try:
         # Generate authorization URL
-        authorization_url = asyncio.run(
+        authorization_url = run_async(
             client.get_authorization_url(
                 redirect_url,
                 scope=["email", "profile"],
@@ -135,53 +192,6 @@ def show_login_button():
 
     except Exception as e:
         st.error(f"Failed to generate auth URL: {e}")
-
-
-# ==============================
-# Google OAuth Setup
-# ==============================
-try:    
-    client_id = st.secrets["google_oauth"]["client_id"]
-    client_secret = st.secrets["google_oauth"]["client_secret"]
-except KeyError as e:
-    st.error(f"Missing Google OAuth secret: {e}. Add to secrets.toml.")
-    st.stop()
-
-redirect_url = "https://stock-broke.streamlit.app/Login"
-client = GoogleOAuth2(client_id=client_id, client_secret=client_secret)
-
-async def get_access_token(client: GoogleOAuth2, redirect_url: str, code: str):
-    return await client.get_access_token(code, redirect_url)
-
-async def get_email(client: GoogleOAuth2, token: str):
-    user_id, user_email = await client.get_id_email(token)
-    return user_id, user_email
-def get_logged_in_user_email():
-    try:
-        code = st.query_params.get("code")
-        if code:
-            token = asyncio.run(get_access_token(client, redirect_url, code))
-            # Clear code from URL using new API
-            st.query_params.clear()
-            if token:
-                user_id, user_email = asyncio.run(get_email(client, token["access_token"]))
-                if user_email:
-                    try:
-                        user = auth.get_user_by_email(user_email)
-                    except exceptions.FirebaseError as e:
-                        if "not found" in str(e).lower():
-                            user = auth.create_user(email=user_email)
-                        else:
-                            raise
-                    st.session_state.username = user.uid
-                    st.session_state.usermail = user.email
-                    st.session_state.singout = True
-                    st.session_state.singedout = True
-                    return user.email
-        return None
-    except Exception as e:
-        st.error(f"Google auth error: {e}")
-        return None 
 
 if "username" not in st.session_state:
     st.session_state.username = ""
@@ -319,6 +329,7 @@ else:
         st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
+
 
 
 
