@@ -46,10 +46,6 @@ def safe_get(info, key, default='N/A'):
     except Exception:
         return default
 
-if not st.session_state.get("singout", False):
-    st.error("Please log in first.")
-    st.query_params["page"] = "/Login"
-    st.rerun()
     
 st.set_page_config(page_title='Stock Analysis',
                   page_icon="📊", layout="wide")
@@ -358,6 +354,7 @@ try:
 
 except Exception as e:
     st.write("Check your Internet Connection or data source:", str(e))
+
 
 
 
