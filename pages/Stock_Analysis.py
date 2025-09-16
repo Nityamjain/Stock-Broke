@@ -87,8 +87,10 @@ def signout():
     st.rerun()
 
 # Authentication UI
-if not st.session_state['singedout']:
-    st.switch_page("pages/Login.py")
+if not st.session_state.get("singout", False):
+    st.error("Please log in first.")
+    st.query_params["page"] = "/Login"
+    st.rerun()
 else:
     with st.sidebar:
         st.header("Navigation")
@@ -353,6 +355,7 @@ try:
 
 except Exception as e:
     st.write("Check your Internet Connection or data source:", str(e))
+
 
 
 
