@@ -6,9 +6,7 @@ import firebase_admin
 from firebase_admin import credentials, auth, exceptions, initialize_app
 import traceback
 
-# ==============================
-# Page Config (Same as Original)
-# ==============================
+# Page Config
 st.set_page_config(
     page_title="Stock Broke - Login",
     page_icon="🔐",
@@ -16,9 +14,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ==============================
 # Firebase Initialization
-# ==============================
 @st.cache_resource
 def init_firebase():
     try:
@@ -35,9 +31,7 @@ def init_firebase():
 if not init_firebase():
     st.stop()
 
-# ==============================
 # Gmail SMTP Setup
-# ==============================
 EMAIL_ADDRESS = st.secrets["EMAIL"]["address"]
 EMAIL_PASSWORD = st.secrets["EMAIL"]["password"]
 
@@ -63,12 +57,11 @@ def send_verification_email(user_email):
         msg["Subject"] = subject
         msg["From"] = EMAIL_ADDRESS
         msg["To"] = user_email
-
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
     except Exception as e:
-        st.error(f"Email sending failed: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Email sending failed: {str(e)}")
 
 def send_password_reset_email(user_email):
     try:
@@ -86,23 +79,20 @@ def send_password_reset_email(user_email):
 
         {reset_link}
 
-        If you did not request this, you can ignore this email.
+        If you did not request this, ignore this email.
         """
         msg = MIMEText(body)
         msg["Subject"] = subject
         msg["From"] = EMAIL_ADDRESS
         msg["To"] = user_email
-
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.sendmail(EMAIL_ADDRESS, user_email, msg.as_string())
         st.success("Password reset link sent! Please check your inbox.")
     except Exception as e:
-        st.error(f"Failed to send reset link: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Failed to send reset link: {str(e)}")
 
-# ==============================
-# Session State (Same as Original)
-# ==============================
+# Session State
 if "username" not in st.session_state:
     st.session_state.username = ""
 if "usermail" not in st.session_state:
@@ -112,9 +102,7 @@ if "singedout" not in st.session_state:
 if "singout" not in st.session_state:
     st.session_state.singout = False
 
-# ==============================
 # Auth Functions
-# ==============================
 def login_callback():
     try:
         email = st.session_state.get("input_email", "").strip()
@@ -137,9 +125,9 @@ def login_callback():
         if "not found" in str(e).lower():
             st.warning("User not found. Please sign up first.")
         else:
-            st.error(f"Login error: {str(e)}\n{traceback.format_exc()}")
+            st.error(f"Login error: {str(e)}")
     except Exception as e:
-        st.error(f"Unexpected login error: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Unexpected login error: {str(e)}")
 
 def signup_callback():
     try:
@@ -158,7 +146,7 @@ def signup_callback():
         st.session_state.signup_username = ""
         st.rerun()
     except Exception as e:
-        st.error(f"Signup error: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Signup error: {str(e)}")
 
 def reset_password_callback():
     try:
@@ -170,7 +158,7 @@ def reset_password_callback():
         st.session_state.reset_email = ""
         st.rerun()
     except Exception as e:
-        st.error(f"Reset password error: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Reset password error: {str(e)}")
 
 def post_google_login():
     try:
@@ -183,7 +171,7 @@ def post_google_login():
         st.session_state.usermail = google_email
         st.session_state.singout = True
         st.session_state.singedout = True
-        st.query_params["page"] = "/Login"  # Redirect to /Login
+        st.query_params["page"] = "/Login"
         st.rerun()
     except exceptions.FirebaseError as e:
         if "not found" in str(e).lower():
@@ -197,13 +185,11 @@ def post_google_login():
             st.query_params["page"] = "/Login"
             st.rerun()
         else:
-            st.error(f"Firebase Google sync error: {str(e)}\n{traceback.format_exc()}")
+            st.error(f"Firebase Google sync error: {str(e)}")
     except Exception as e:
-        st.error(f"Google post-login error: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"Google post-login error: {str(e)}")
 
-# ==============================
 # UI
-# ==============================
 st.title("Welcome to Stock Broke!")
 
 # Handle Google OAuth callback
@@ -231,36 +217,8 @@ else:
                 if st.button("Login", on_click=login_callback):
                     st.switch_page("pages/Stock_Analysis.py")
             with c3:
-                # Custom Google button (same as original)
-                google_button = f'''
-                <a href="#" target="_self" style="text-decoration:none;" onclick="document.getElementById('google-login').click();">
-                    <div style='
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        background-color: #ffffff;
-                        color: #000000;
-                        border: 1px solid #d6d6d6;
-                        border-radius: 0.5rem;
-                        font-size: 0.9rem;
-                        font-weight: 500;
-                        padding: 0.6rem 1.2rem;
-                        width: 250px;
-                        margin: 10px auto;
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                        cursor: pointer;
-                        transition: all 0.2s ease-in-out;
-                    '
-                    onmouseover="this.style.backgroundColor='#f1f1f1'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.15);'" 
-                    onmouseout="this.style.backgroundColor='#ffffff'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-                             style="height:20px;width:20px;margin-right:10px;" />
-                        <span>Login with Google</span>
-                    </div>
-                </a>
-                <button id="google-login" style="display:none;" onclick="{st.login()}"></button>
-                '''
-                st.markdown(google_button, unsafe_allow_html=True)
+                # Custom Google button
+                st.button("Login with Google", on_click=st.login)
 
         elif choice == "SignUp":
             st.subheader("Create New Account")
@@ -277,4 +235,4 @@ else:
                 pass
 
     except Exception as e:
-        st.error(f"App error: {str(e)}\n{traceback.format_exc()}")
+        st.error(f"App error: {str(e)}")
