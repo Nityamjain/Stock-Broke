@@ -9,8 +9,7 @@ from httpx_oauth.clients.google import GoogleOAuth2
 from google.auth.exceptions import RefreshError
 
 
-st.set_page_config(page_title="Stock Broke - Login", page_icon="🔐",initial_sidebar_state="collapsed",layout="centered")
-
+st.set_page_config(page_title="Stock Broke - Login", page_icon="🔐", initial_sidebar_state="collapsed", layout="centered")
 
 # ==============================
 # Firebase Initialization
@@ -89,8 +88,6 @@ def send_password_reset_email(user_email):
         st.error(f"Failed to send reset link: {e}")
 
 
-
-
 # ==============================
 # Google OAuth Setup
 # ==============================
@@ -123,8 +120,7 @@ def get_logged_in_user_email():
         code = st.query_params.get("code")
         if code:
             token = run_async(get_access_token(client, redirect_url, code))
-            # Clear code from URL using new API
-            st.query_params.clear()
+            st.query_params.clear()  # Clear code from URL
             if token:
                 user_id, user_email = run_async(get_email(client, token["access_token"]))
                 if user_email:
@@ -137,6 +133,7 @@ def get_logged_in_user_email():
                             raise
                     st.session_state.username = user.uid
                     st.session_state.usermail = user.email
+                    st.session_state.guest = False
                     st.session_state.singout = True
                     st.session_state.singedout = True
                     return user.email
@@ -147,7 +144,6 @@ def get_logged_in_user_email():
 
 def show_login_button():
     try:
-        # Generate authorization URL
         authorization_url = run_async(
             client.get_authorization_url(
                 redirect_url,
@@ -156,7 +152,6 @@ def show_login_button():
             )
         )
 
-        # Google-style button, matches Streamlit's native button theme
         google_button = f'''
         <a href="{authorization_url}" target="_self" style="text-decoration:none;">
             <div style='
@@ -184,23 +179,20 @@ def show_login_button():
             </div>
         </a>
         '''
-
         st.markdown(google_button, unsafe_allow_html=True)
-
-        # Handle login state after redirect
         get_logged_in_user_email()
 
     except Exception as e:
         st.error(f"Failed to generate auth URL: {e}")
 
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "usermail" not in st.session_state:
-    st.session_state.usermail = ""
-if "singedout" not in st.session_state:
-    st.session_state.singedout = False
-if "singout" not in st.session_state:
-    st.session_state.singout = False
+# ==============================
+# Session State Defaults
+# ==============================
+if "username" not in st.session_state: st.session_state.username = ""
+if "usermail" not in st.session_state: st.session_state.usermail = ""
+if "singedout" not in st.session_state: st.session_state.singedout = False
+if "singout" not in st.session_state: st.session_state.singout = False
+if "guest" not in st.session_state: st.session_state.guest = False
 
 # ==============================
 # Auth Functions
@@ -220,17 +212,13 @@ def login_callback():
         st.success("Login successful!")
         st.session_state.username = user.uid
         st.session_state.usermail = user.email
+        st.session_state.guest = False
         st.session_state.singout = True
         st.session_state.singedout = True
-        
 
-        # Clear inputs
         st.session_state.input_email = ""
         st.session_state.input_password = ""
     
-
-        
-
     except exceptions.FirebaseError as e:
         if "not found" in str(e).lower():
             st.warning("User not found. Please sign up first.")
@@ -251,7 +239,6 @@ def signup_callback():
         send_verification_email(email)
         st.success("Account created! Please check your inbox to verify your email.")
         st.info("Go to Login after verifying.")
-        # Clear fields
         st.session_state.signup_email = ""
         st.session_state.signup_password = ""
         st.session_state.signup_username = ""
@@ -266,55 +253,91 @@ def reset_password_callback():
         st.warning("Please enter your email.")
         return
     send_password_reset_email(email)
-
     st.session_state.reset_email = ""
-
 
 def logout_callback():
     st.session_state.singout = False
     st.session_state.singedout = False
     st.session_state.username = ""
     st.session_state.usermail = ""
+    st.session_state.guest = False
+
+def guest_login_callback():
+    st.session_state.username = "guest_user"
+    st.session_state.usermail = "guest@stockbroke.com"
+    st.session_state.guest = True
+    st.session_state.singout = True
+    st.session_state.singedout = True
+
+def delete_account_callback():
+    if st.session_state.guest:
+        st.warning("Guest users cannot delete accounts.")
+        return
+    try:
+        user = auth.get_user_by_email(st.session_state.usermail)
+        auth.delete_user(user.uid)
+        st.success("Your account has been deleted successfully.")
+        logout_callback()
+    except Exception as e:
+        st.error(f"Failed to delete account: {e}")
+
 
 # ==============================
 # UI
 # ==============================
-
-# At the very top, after session_state defaults
 google_email = get_logged_in_user_email()
 if google_email and not st.session_state.singedout:
-    # Mark user as logged in
     try:
         user = auth.get_user_by_email(google_email)
         st.session_state.username = user.uid
         st.session_state.usermail = user.email
+        st.session_state.guest = False
         st.session_state.singout = True
         st.session_state.singedout = True
     except exceptions.FirebaseError:
         st.error("Failed to fetch Google user from Firebase.")
 
-st.title("Welcome to Stock Broke!")
+st.title("🔐 Welcome to Stock Broke!")
 
 if st.session_state.singout:
-        st.subheader("Welcome Back!")
-        st.text(f"Username: {st.session_state.username}")
-        st.text(f"Email: {st.session_state.usermail}")
-        if st.button("SignOut", on_click=logout_callback):
+    st.subheader("User Dashboard")
+
+    with st.container():
+        st.markdown(
+            f"""
+            <div style='padding:15px; border-radius:10px; background-color:#; box-shadow: 0px 2px 8px rgba(0,0,0,0.1);'>
+                <h4 style='margin:0;'>👤 Username: {st.session_state.username}</h4>
+                <p style='margin:5px 0;'>📧 Email: {st.session_state.usermail}</p>
+                <p style='margin:5px 0;'>{"(Guest User)" if st.session_state.guest else "(Registered User)"}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Sign Out", on_click=logout_callback):
             pass
+    with col2:
+        if not st.session_state.guest:
+            if st.button("Delete Account", on_click=delete_account_callback):
+                pass
 
 else:
-    choice = st.selectbox("Login/SignUp", ["Login", "SignUp","Reset Password"])
+    choice = st.selectbox("Login/SignUp", ["Login", "SignUp", "Reset Password"])
 
     if choice == "Login":
         st.subheader("Login Section")
         st.text_input("Email", key="input_email")
         st.text_input("Password", type="password", key="input_password")
-        c1,c2,c3=st.columns([1,0.7,1])        
+        c1, c2, c3 = st.columns([1, 0.7, 1])        
         with c1:
-         if st.button("Login", on_click=login_callback):
-             st.switch_page("pages/Stock_Analysis.py")
+            if st.button("Login", on_click=login_callback):
+                st.switch_page("pages/Stock_Analysis.py")
         with c3:
             show_login_button()
+        st.button("Proceed as Guest", on_click=guest_login_callback)
+            
 
     elif choice == "SignUp":
         st.subheader("Create New Account")
@@ -330,21 +353,6 @@ else:
         if st.button("Send Reset Link", on_click=reset_password_callback):
             pass
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    elif choice == "Continue as Guest":
+        if st.button("Proceed as Guest", on_click=guest_login_callback):
+            st.switch_page("pages/Stock_Analysis.py")
